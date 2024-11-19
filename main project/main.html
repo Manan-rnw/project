@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://codepen.io/GreenSock/pen/7ba936b34824fefdccfe2c6d9f0b740b.css">
+    <style>
+        .container {
+            /*   overscroll-behavior: none; */
+            width: 400%;
+            height: 100%;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+
+        .swipe-section {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .swipe-section .panel {
+            position: absolute;
+        }
+
+        * {
+            background-image: none !important
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <div class="description panel blue">
+        <div>
+            <h1>Mixed observer and scrolling...</h1>
+            <div class="scroll-down">Scroll down<div class="arrow"></div>
+            </div>
+        </div>
+    </div> -->
+
+
+
+    <div class="container horizontal">
+        <section class="panel red">
+            ONE
+        </section>
+        <section class="panel orange">
+            TWO
+        </section>
+        <section class="panel purple">
+            THREE
+        </section>
+        <section class="panel green">
+            FOUR
+        </section>
+    </div>
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Minima laudantium deleniti voluptas reprehenderit,
+    dolorum praesentium tempore. Reprehenderit voluptas nobis dolorum, voluptates sit corporis, officia, quis
+    animi voluptatibus optio in omnis id. Omnis earum possimus impedit magni quisquam aliquid consequatur labore
+    qui vel eos! Porro amet corrupti incidunt quod quidem similique rem tempora, obcaecati quasi explicabo
+    itaque ratione modi nostrum animi dolores? Vitae ratione nostrum repellat fugiat distinctio dolorem
+    molestias temporibus necessitatibus reiciendis amet perspiciatis esse quae nulla hic facilis delectus, quis
+    fugit minus soluta ad at optio? Vero architecto debitis nesciunt officia expedita veritatis nihil, nisi
+    suscipit, ullam, nulla iure possimus sunt minima velit repudiandae tempore fuga blanditiis doloribus soluta
+    voluptatem voluptates doloremque? Dolorem asperiores maxime eos tempore fugit enim ex ducimus dolore aliquam
+    iste. A quis qui eaque. Dicta consectetur sequi quos repellendus nihil, officia odio officiis eius sint ea
+    non, laudantium id, deleniti illo? Ut quibusdam ab deleniti magni vero dolorem quisquam eaque dicta
+    voluptas. Ab nostrum molestiae eum animi sapiente delectus quo distinctio rem reprehenderit vero neque sed,
+    magni, ratione quidem. Ducimus architecto consequatur nemo ipsum, illo quaerat, perspiciatis quod dolor at
+    eius fugiat omnis iusto accusamus quos deserunt ullam eaque eveniet natus id aut nulla soluta dolores
+    doloribus. Ipsa accusantium velit obcaecati cupiditate recusandae fugit officia, laboriosam dolorem
+    voluptatum necessitatibus nesciunt sint enim est totam asperiores! At mollitia inventore itaque blanditiis
+    tenetur eos ea consequuntur? Odio, iure modi quia voluptatibus iste illum? Aspernatur tenetur dolores quidem
+    rem. Voluptatibus maiores illo, ad facilis illum voluptatum hic numquam enim, quod temporibus impedit earum
+    quo libero officia at fugiat aut tenetur atque fuga. Commodi optio consequatur eius, enim id cum iusto est,
+    neque vel delectus porro ad voluptate impedit minus culpa iure ipsum hic nulla possimus assumenda aliquid,
+    aut asperiores. Quos ipsam eaque minus dolorem dolores sit dolore molestiae error nisi voluptatem. Illo
+    autem esse suscipit? Distinctio quis, officiis cupiditate dolor itaque, ullam placeat odio accusamus
+    laboriosam alias commodi temporibus quo eum qui laborum natus, deleniti sit minus. Quia, praesentium
+    dolorem, doloribus qui veniam maiores voluptatem mollitia repellat at rem accusantium architecto officiis.
+    Obcaecati tempora repudiandae earum, architecto non commodi rerum sapiente deleniti asperiores quidem, esse
+    aperiam nam repellat. Nobis voluptas qui alias obcaecati rem quas, tenetur, ipsum in corporis nulla velit
+    placeat repellendus beatae delectus temporibus quod doloremque perferendis reiciendis! Voluptatem nam
+    eveniet expedita! Error, culpa exercita
+
+    <script src="https://assets.codepen.io/16327/ScrollTrigger.min.js"></script>
+    <script src="https://assets.codepen.io/16327/gsap-latest-beta.min.js?r=3.11.5"></script>
+    <script>
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        let allowScroll = true; // sometimes we want to ignore scroll-related stuff, like when an Observer-based section is transitioning.
+        let scrollTimeout = gsap.delayedCall(1, () => allowScroll = true).pause(); // controls how long we should wait after an Observer-based animation is initiated before we allow another scroll-related action
+        let currentIndex = 0;
+        let swipePanels = gsap.utils.toArray(".swipe-section .panel");
+
+        // set z-index levels for the swipe panels
+        gsap.set(swipePanels, { zIndex: i => swipePanels.length - i })
+
+        // create an observer and disable it to start
+        let intentObserver = ScrollTrigger.observe({
+            type: "wheel,touch",
+            onUp: () => allowScroll && gotoPanel(currentIndex - 1, false),
+            onDown: () => allowScroll && gotoPanel(currentIndex + 1, true),
+            tolerance: 10,
+            preventDefault: true,
+            onEnable(self) {
+                allowScroll = false;
+                scrollTimeout.restart(true);
+                // when enabling, we should save the scroll position and freeze it. This fixes momentum-scroll on Macs, for example.
+                let savedScroll = self.scrollY();
+                self._restoreScroll = () => self.scrollY(savedScroll); // if the native scroll repositions, force it back to where it should be
+                document.addEventListener("scroll", self._restoreScroll, { passive: false });
+            },
+            onDisable: self => document.removeEventListener("scroll", self._restoreScroll)
+        });
+        intentObserver.disable();
+
+        // handle the panel swipe animations
+        function gotoPanel(index, isScrollingDown) {
+            // return to normal scroll if we're at the end or back up to the start
+            if ((index === swipePanels.length && isScrollingDown) || (index === -1 && !isScrollingDown)) {
+                intentObserver.disable(); // resume native scroll
+                return;
+            }
+            allowScroll = false;
+            scrollTimeout.restart(true);
+
+            let target = isScrollingDown ? swipePanels[currentIndex] : swipePanels[index];
+            gsap.to(target, {
+                yPercent: isScrollingDown ? -100 : 0,
+                duration: 0.75
+            });
+
+            currentIndex = index;
+        }
+
+  
+        let horizontalSections = gsap.utils.toArray(".horizontal .panel");
+        gsap.to(horizontalSections, {
+            xPercent: -100 * (horizontalSections.length - 1),
+            ease: "none",
+            scrollTrigger: {
+                trigger: '.horizontal',
+                pin: true,
+                scrub: 1,
+                end: "+=3500",
+                markers: true,
+            }
+        });
+
+
+    </script>
+</body>
+
+</html>
